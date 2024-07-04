@@ -35,17 +35,21 @@ def process_and_plot(df, additional_text):
             flight_text = vuelo['Flight']
             trip_text = vuelo['Trip']
             notas_text = vuelo['Notas']
+            tripadi_text = vuelo['Tripadi']
             
             if text_fits(ax, flight_text, start, duration):
                 ax.text(start + duration / 2, i, flight_text, ha='center', va='center', color='black', fontsize=8)
             else:
                 ax.text(start + duration / 2, i - rect_height, flight_text, ha='center', va='top', color='black', fontsize=8)
             
-            # Trip text above the bar
-            ax.text(start + duration / 2, i + 0.2, trip_text, ha='center', va='bottom', color='blue', fontsize=8)
+            # Trip text above the bar, slightly higher
+            ax.text(start + duration / 2, i + 0.35, trip_text, ha='center', va='bottom', color='blue', fontsize=8)
             
             # Notas text below the bar
-            ax.text(start + duration / 2, i - 0.2, notas_text, ha='center', va='top', color='green', fontsize=8)
+            ax.text(start + duration / 2, i - 0.25, notas_text, ha='center', va='top', color='green', fontsize=8)
+            
+            # Tripadi text below the Notas
+            ax.text(start + duration / 2, i - 0.45, tripadi_text, ha='center', va='top', color='purple', fontsize=8)
 
             origin_text = vuelo['From']
             if text_fits(ax, origin_text, start, duration):
@@ -97,4 +101,3 @@ def index():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
