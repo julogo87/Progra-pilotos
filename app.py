@@ -20,19 +20,7 @@ def text_fits(ax, text, start, duration):
     text_length_approx = len(text) * 0.02
     return duration.total_seconds() / 3600 >= text_length_approx
 
-def process_and_plot(df, additional_text):
-    try:
-        df['fecha_salida'] = parse_dates(df['STD'])
-        df['fecha_llegada'] = parse_dates(df['STA'])
-    except KeyError as e:
-        return None, f"Missing column in input data: {e}"
-    except ValueError as e:
-        return None, f"Date conversion error: {e}"
-
-    df['Trip'] = df['Trip'].fillna(' ')
-    df['Notas'] = df['Notas'].fillna(' ')
-    df['Tripadi'] = df['Tripadi'].fillna(' ')
-
+def generate_plot(df, additional_text, start_day):
     order = ['N330QT', 'N331QT', 'N332QT', 'N334QT', 'N335QT', 'N336QT', 'N337QT']
     df['aeronave'] = pd.Categorical(df['Reg.'], categories=order, ordered=True)
     df = df.sort_values('aeronave', ascending=False)
@@ -84,7 +72,6 @@ def process_and_plot(df, additional_text):
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     plt.xticks(rotation=45, fontsize=10)
     
-    start_day = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
     end_day = (start_day + pd.Timedelta(days=1)) - pd.Timedelta(minutes=1)
     ax.set_xlim(start_day, end_day)
     
@@ -97,7 +84,33 @@ def process_and_plot(df, additional_text):
     plt.savefig(buf, format='pdf', bbox_inches='tight')
     buf.seek(0)
     plt.close(fig)
-    return buf, None
+    return buf
+
+def process_and_plot(df, additional_text):
+    try:
+        df['fecha_salida'] = parse_dates(df['STD'])
+        df['fecha_llegada'] = parse_dates(df['STA'])
+    except KeyError as e:
+        return None, f"Missing column in input data: {e}"
+    except ValueError as e:
+        return None, f"Date conversion error: {e}"
+
+    df['Trip'] = df['Trip'].fillna(' ')
+    df['Notas'] = df['Notas'].fillna(' ')
+    df['Tripadi'] = df['Tripadi'].fillna(' ')
+
+    pdf_buffers = []
+    start_day = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
+    end_of_data = df['fecha_llegada'].max()
+
+    while start_day <= end_of_data:
+        df_period = df[(df['fecha_salida'] >= start_day) & (df['fecha_salida'] < start_day + pd.Timedelta(days=1))]
+        if not df_period.empty:
+            buf = generate_plot(df_period, additional_text, start_day)
+            pdf_buffers.append(buf)
+        start_day += pd.Timedelta(days=1)
+
+    return pdf_buffers, None
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -109,13 +122,21 @@ def index():
         except ValueError as e:
             return jsonify({'error': f"JSON parsing error: {e}"}), 400
 
-        pdf, error = process_and_plot(df, additional_text)
+        pdf_buffers, error = process_and_plot(df, additional_text)
         if error:
             return jsonify({'error': error}), 400
-        return send_file(pdf, as_attachment=True, download_name='programacion_vuelos_qt.pdf', mimetype='application/pdf')
+        
+        output = io.BytesIO()
+        with open(output, 'wb') as f_out:
+            for buf in pdf_buffers:
+                f_out.write(buf.getbuffer())
+        
+        output.seek(0)
+        return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt.pdf', mimetype='application/pdf')
     return render_template('index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
 
