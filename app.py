@@ -22,30 +22,36 @@ def text_fits(ax, text, start, duration):
     return duration.total_seconds() / 3600 >= text_length_approx
 
 def draw_text(ax, text, x, y, duration, align='center', **kwargs):
+    max_width = duration.total_seconds() / 3600 * 0.8  # Limitar el ancho del texto a 80% de la duración
     if text_fits(ax, text, x, duration):
         ax.text(x + duration / 2, y, text, ha=align, va='center', **kwargs)
     else:
-        truncated_text = text[:int(duration.total_seconds() / 3600 * 50)] + '...'
+        truncated_text = text[:int(max_width * 50)] + '...'  # Ajustar longitud del texto basado en duración
         ax.text(x + duration / 2, y, truncated_text, ha=align, va='center', **kwargs)
 
-def generate_plot(df, additional_text, start_time, end_time):
+def generate_plot(df, additional_text, start_time, end_time, figsize=(11, 8.5)):
     order = ['N330QT', 'N331QT', 'N332QT', 'N334QT', 'N335QT', 'N336QT', 'N337QT']
     df['aeronave'] = pd.Categorical(df['Reg.'], categories=order, ordered=True)
     df = df.sort_values('aeronave', ascending=False)
-    fig, ax = plt.subplots(figsize=(11, 8.5))  # Tamaño carta horizontal
+    fig, ax = plt.subplots(figsize=figsize)  # Tamaño especificado
 
     for i, aeronave in enumerate(reversed(order)):
         vuelos_aeronave = df[df['aeronave'] == aeronave]
         for _, vuelo in vuelos_aeronave.iterrows():
             start = vuelo['fecha_salida']
             duration = vuelo['fecha_llegada'] - vuelo['fecha_salida']
+            if start < start_time:
+                duration -= (start_time - start)
+                start = start_time
+            if start + duration > end_time:
+                duration = end_time - start
             rect_height = 0.2
             ax.broken_barh([(start, duration)], (i - rect_height/2, rect_height), facecolors='#ADD8E6')  # Azul claro
             
             draw_text(ax, vuelo['Flight'], start, i, duration, color='black', fontsize=8)
-            draw_text(ax, vuelo['Trip'], start, i + 0.35, duration, color='blue', fontsize=8)
+            draw_text(ax, vuelo['Trip'], start, i + 0.3, duration, color='blue', fontsize=8)  # Bajado ligeramente
             draw_text(ax, vuelo['Notas'], start, i - 0.25, duration, color='green', fontsize=8)
-            draw_text(ax, vuelo['Tripadi'], start, i - 0.45, duration, color='purple', fontsize=8)
+            draw_text(ax, vuelo['Tripadi'], start, i - 0.4, duration, color='purple', fontsize=8)  # Subido ligeramente
 
             if text_fits(ax, vuelo['From'], start, duration):
                 ax.text(start, i + 0.2, vuelo['From'], ha='left', va='center', color='black', fontsize=8)
@@ -95,7 +101,7 @@ def process_and_plot(df, additional_text):
     while current_date <= end_of_data:
         current_start_time = current_date + pd.Timedelta(hours=5)
         current_end_time = current_start_time + pd.Timedelta(hours=27) - pd.Timedelta(minutes=1)
-        df_period = df[(df['fecha_salida'] >= current_start_time) & (df['fecha_salida'] < current_end_time + pd.Timedelta(minutes=1))]
+        df_period = df[(df['fecha_salida'] >= current_start_time) & (df['fecha_salida'] < current_end_time)]
         if not df_period.empty:
             buf = generate_plot(df_period, additional_text, current_start_time, current_end_time)
             pdf_buffers.append(buf)
@@ -103,32 +109,44 @@ def process_and_plot(df, additional_text):
 
     return pdf_buffers, None
 
+def generate_full_plot(df, additional_text):
+    start_time = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
+    end_time = df['fecha_llegada'].max()
+    return generate_plot(df, additional_text, start_time, end_time, figsize=(31.5, 8.5))  # 80cm x 22cm in inches
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         table_data = request.form['table_data']
         additional_text = request.form.get('additional_text')
+        full_plot = request.form.get('full_plot', 'false') == 'true'
         try:
             df = pd.read_json(table_data)
         except ValueError as e:
             return jsonify({'error': f"JSON parsing error: {e}"}), 400
 
-        pdf_buffers, error = process_and_plot(df, additional_text)
-        if error:
-            return jsonify({'error': error}), 400
-        
-        output = io.BytesIO()
-        merger = PdfMerger()
-        for buf in pdf_buffers:
-            merger.append(buf)
-        merger.write(output)
-        merger.close()
-        output.seek(0)
-        
-        return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt.pdf', mimetype='application/pdf')
+        if full_plot:
+            pdf_buffer = generate_full_plot(df, additional_text)
+            output = io.BytesIO()
+            output.write(pdf_buffer.getbuffer())
+            output.seek(0)
+            return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt_full.pdf', mimetype='application/pdf')
+        else:
+            pdf_buffers, error = process_and_plot(df, additional_text)
+            if error:
+                return jsonify({'error': error}), 400
+            
+            output = io.BytesIO()
+            merger = PdfMerger()
+            for buf in pdf_buffers:
+                merger.append(buf)
+            merger.write(output)
+            merger.close()
+            output.seek(0)
+            
+            return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt.pdf', mimetype='application/pdf')
     return render_template('index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
