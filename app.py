@@ -36,7 +36,7 @@ def process_and_plot(df, additional_text):
     order = ['N330QT', 'N331QT', 'N332QT', 'N334QT', 'N335QT', 'N336QT', 'N337QT']
     df['aeronave'] = pd.Categorical(df['Reg.'], categories=order, ordered=True)
     df = df.sort_values('aeronave', ascending=False)
-    fig, ax = plt.subplots(figsize=(8.5, 11))  # Tamaño carta
+    fig, ax = plt.subplots(figsize=(11, 8.5))  # Tamaño carta horizontal
 
     for i, aeronave in enumerate(reversed(order)):
         vuelos_aeronave = df[df['aeronave'] == aeronave]
@@ -118,3 +118,4 @@ def index():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
