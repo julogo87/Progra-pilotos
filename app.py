@@ -100,16 +100,17 @@ def process_and_plot(df, additional_text):
     df['Tripadi'] = df['Tripadi'].fillna(' ')
 
     pdf_buffers = []
-    current_start_time = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
+    current_date = df['fecha_salida'].min().normalize()
     end_of_data = df['fecha_llegada'].max()
 
-    while current_start_time <= end_of_data:
+    while current_date <= end_of_data:
+        current_start_time = current_date + pd.Timedelta(hours=5)
         current_end_time = current_start_time + pd.Timedelta(hours=27) - pd.Timedelta(minutes=1)
         df_period = df[(df['fecha_salida'] >= current_start_time) & (df['fecha_salida'] < current_end_time + pd.Timedelta(minutes=1))]
         if not df_period.empty:
             buf = generate_plot(df_period, additional_text, current_start_time, current_end_time)
             pdf_buffers.append(buf)
-        current_start_time += pd.Timedelta(hours=27)
+        current_date += pd.Timedelta(days=1)
 
     return pdf_buffers, None
 
@@ -141,4 +142,3 @@ def index():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
