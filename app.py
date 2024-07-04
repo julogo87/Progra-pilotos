@@ -99,7 +99,7 @@ def process_and_plot(df, additional_text):
     plt.close(fig)
     return buf, None
 
-@app.route('/', methods=['GET, 'POST'])
+@app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         table_data = request.form['table_data']
