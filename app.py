@@ -21,7 +21,7 @@ def text_fits(ax, text, start, duration):
     text_length_approx = len(text) * 0.02
     return duration.total_seconds() / 3600 >= text_length_approx
 
-def generate_plot(df, additional_text, start_day):
+def generate_plot(df, additional_text, start_time, end_time):
     order = ['N330QT', 'N331QT', 'N332QT', 'N334QT', 'N335QT', 'N336QT', 'N337QT']
     df['aeronave'] = pd.Categorical(df['Reg.'], categories=order, ordered=True)
     df = df.sort_values('aeronave', ascending=False)
@@ -73,8 +73,7 @@ def generate_plot(df, additional_text, start_day):
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M'))
     plt.xticks(rotation=45, fontsize=10)
     
-    end_day = (start_day + pd.Timedelta(days=1)) - pd.Timedelta(minutes=1)
-    ax.set_xlim(start_day, end_day)
+    ax.set_xlim(start_time, end_time)
     
     plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.15)
     plt.xlabel('Hora')
@@ -101,15 +100,16 @@ def process_and_plot(df, additional_text):
     df['Tripadi'] = df['Tripadi'].fillna(' ')
 
     pdf_buffers = []
-    start_day = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
+    current_start_time = df['fecha_salida'].min().normalize() + pd.Timedelta(hours=5)
     end_of_data = df['fecha_llegada'].max()
 
-    while start_day <= end_of_data:
-        df_period = df[(df['fecha_salida'] >= start_day) & (df['fecha_salida'] < start_day + pd.Timedelta(days=1))]
+    while current_start_time <= end_of_data:
+        current_end_time = current_start_time + pd.Timedelta(hours=3) - pd.Timedelta(minutes=1)
+        df_period = df[(df['fecha_salida'] >= current_start_time) & (df['fecha_salida'] < current_end_time + pd.Timedelta(minutes=1))]
         if not df_period.empty:
-            buf = generate_plot(df_period, additional_text, start_day)
+            buf = generate_plot(df_period, additional_text, current_start_time, current_end_time)
             pdf_buffers.append(buf)
-        start_day += pd.Timedelta(days=1)
+        current_start_time += pd.Timedelta(hours=3)
 
     return pdf_buffers, None
 
