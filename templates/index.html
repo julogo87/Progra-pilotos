@@ -17,7 +17,9 @@
         <input type="text" id="additional_text" name="additional_text" placeholder="Ingrese texto adicional para el título"><br><br>
         <button type="submit">Procesar tabla y descargar PDF</button>
         <button type="button" id="fullPlotButton">Generar PDF de gran tamaño</button>
+        <button type="button" id="tabloidPlotButton">Generar PDF tamaño tabloide</button>
         <input type="hidden" id="full_plot" name="full_plot" value="false">
+        <input type="hidden" id="tabloid_plot" name="tabloid_plot" value="false">
     </form>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
@@ -26,6 +28,11 @@
             document.getElementById('full_plot').value = 'true';
             document.getElementById('dataForm').submit();
             document.getElementById('full_plot').value = 'false';
+        });
+        document.getElementById('tabloidPlotButton').addEventListener('click', function() {
+            document.getElementById('tabloid_plot').value = 'true';
+            document.getElementById('dataForm').submit();
+            document.getElementById('tabloid_plot').value = 'false';
         });
     </script>
 </body>
