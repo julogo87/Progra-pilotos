@@ -1,2 +1,8 @@
+dash
 pandas
+plotly
+pdfkit
 matplotlib
+IPython
+ipywidgets
+ipywidgets
