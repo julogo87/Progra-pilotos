@@ -7,14 +7,23 @@ import os
 
 app = Flask(__name__)
 
+def parse_dates(date_series):
+    formats = ['%d/%m/%Y %H:%M', '%d%b %H:%M']
+    for fmt in formats:
+        try:
+            return pd.to_datetime(date_series, format=fmt, dayfirst=True)
+        except (ValueError, TypeError):
+            continue
+    raise ValueError("Date conversion error: None of the formats matched.")
+
 def text_fits(ax, text, start, duration):
     text_length_approx = len(text) * 0.02
     return duration.total_seconds() / 3600 >= text_length_approx
 
 def process_and_plot(df, additional_text):
     try:
-        df['fecha_salida'] = pd.to_datetime(df['STD'], format='%d/%m/%Y %H:%M', dayfirst=True)
-        df['fecha_llegada'] = pd.to_datetime(df['STA'], format='%d/%m/%Y %H:%M', dayfirst=True)
+        df['fecha_salida'] = parse_dates(df['STD'])
+        df['fecha_llegada'] = parse_dates(df['STA'])
     except KeyError as e:
         return None, f"Missing column in input data: {e}"
     except ValueError as e:
