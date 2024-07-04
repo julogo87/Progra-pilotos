@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
         contextMenu: true,
         minSpareRows: 1,
         columns: [
-            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}
+            {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {type: 'text'}, {type: 'text'}, {type: 'text'}
         ]
     });
 
