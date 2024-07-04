@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import io
 import os
+from PyPDF2 import PdfMerger
 
 app = Flask(__name__)
 
@@ -127,16 +128,17 @@ def index():
             return jsonify({'error': error}), 400
         
         output = io.BytesIO()
-        with open(output, 'wb') as f_out:
-            for buf in pdf_buffers:
-                f_out.write(buf.getbuffer())
-        
+        merger = PdfMerger()
+        for buf in pdf_buffers:
+            merger.append(buf)
+        merger.write(output)
+        merger.close()
         output.seek(0)
+        
         return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt.pdf', mimetype='application/pdf')
     return render_template('index.html')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
 
