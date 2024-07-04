@@ -50,8 +50,8 @@ def generate_plot(df, additional_text, start_time, end_time, figsize=(11, 8.5)):
             
             draw_text(ax, vuelo['Flight'], start, i, duration, color='black', fontsize=8)
             draw_text(ax, vuelo['Trip'], start, i + 0.3, duration, color='blue', fontsize=8)  # Bajado ligeramente
-            draw_text(ax, vuelo['Notas'], start, i - 0.25, duration, color='green', fontsize=8)
-            draw_text(ax, vuelo['Tripadi'], start, i - 0.4, duration, color='purple', fontsize=8)  # Subido ligeramente
+            draw_text(ax, vuelo['Notas'], start, i - 0.3, duration, color='green', fontsize=8)  # Bajado ligeramente
+            draw_text(ax, vuelo['Tripadi'], start, i - 0.5, duration, color='purple', fontsize=8)  # Bajado ligeramente
 
             if text_fits(ax, vuelo['From'], start, duration):
                 ax.text(start, i + 0.2, vuelo['From'], ha='left', va='center', color='black', fontsize=8)
@@ -122,6 +122,7 @@ def index():
         full_plot = request.form.get('full_plot', 'false') == 'true'
         try:
             df = pd.read_json(table_data)
+            df.rename(columns={'STD': 'fecha_salida', 'STA': 'fecha_llegada'}, inplace=True)
         except ValueError as e:
             return jsonify({'error': f"JSON parsing error: {e}"}), 400
 
