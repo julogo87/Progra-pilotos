@@ -104,12 +104,12 @@ def process_and_plot(df, additional_text):
     end_of_data = df['fecha_llegada'].max()
 
     while current_start_time <= end_of_data:
-        current_end_time = current_start_time + pd.Timedelta(hours=3) - pd.Timedelta(minutes=1)
+        current_end_time = current_start_time + pd.Timedelta(hours=27) - pd.Timedelta(minutes=1)
         df_period = df[(df['fecha_salida'] >= current_start_time) & (df['fecha_salida'] < current_end_time + pd.Timedelta(minutes=1))]
         if not df_period.empty:
             buf = generate_plot(df_period, additional_text, current_start_time, current_end_time)
             pdf_buffers.append(buf)
-        current_start_time += pd.Timedelta(hours=3)
+        current_start_time += pd.Timedelta(hours=27)
 
     return pdf_buffers, None
 
