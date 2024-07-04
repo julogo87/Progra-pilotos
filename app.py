@@ -5,6 +5,7 @@ import matplotlib.dates as mdates
 import io
 import os
 from PyPDF2 import PdfMerger
+from io import StringIO
 
 app = Flask(__name__)
 
@@ -83,10 +84,12 @@ def generate_plot(df, additional_text, start_time, end_time, figsize=(11, 8.5)):
 
 def process_and_plot(df, additional_text):
     try:
+        if 'STD' not in df.columns or 'STA' not in df.columns:
+            raise KeyError("Missing column in input data: 'STD' or 'STA'")
         df['fecha_salida'] = parse_dates(df['STD'])
         df['fecha_llegada'] = parse_dates(df['STA'])
     except KeyError as e:
-        return None, f"Missing column in input data: {e}"
+        return None, str(e)
     except ValueError as e:
         return None, f"Date conversion error: {e}"
 
@@ -121,7 +124,7 @@ def index():
         additional_text = request.form.get('additional_text')
         full_plot = request.form.get('full_plot', 'false') == 'true'
         try:
-            df = pd.read_json(table_data)
+            df = pd.read_json(StringIO(table_data))
             df.rename(columns={'STD': 'fecha_salida', 'STA': 'fecha_llegada'}, inplace=True)
         except ValueError as e:
             return jsonify({'error': f"JSON parsing error: {e}"}), 400
