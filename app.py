@@ -5,7 +5,6 @@ import matplotlib.dates as mdates
 import io
 import os
 from PyPDF2 import PdfMerger
-from io import StringIO
 
 app = Flask(__name__)
 
@@ -84,14 +83,10 @@ def generate_plot(df, additional_text, start_time, end_time, figsize=(11, 8.5)):
 
 def process_and_plot(df, additional_text):
     try:
-        if 'STD' not in df.columns or 'STA' not in df.columns:
-            raise KeyError("Missing column in input data: 'STD' or 'STA'")
-        df['STD'] = df['STD'].astype(str)
-        df['STA'] = df['STA'].astype(str)
         df['fecha_salida'] = parse_dates(df['STD'])
         df['fecha_llegada'] = parse_dates(df['STA'])
     except KeyError as e:
-        return None, str(e)
+        return None, f"Missing column in input data: {e}"
     except ValueError as e:
         return None, f"Date conversion error: {e}"
 
@@ -119,20 +114,14 @@ def generate_full_plot(df, additional_text):
     end_time = df['fecha_llegada'].max()
     return generate_plot(df, additional_text, start_time, end_time, figsize=(31.5, 8.5))  # 80cm x 22cm in inches
 
-def generate_tabloid_plot(df, additional_text):
-    start_time = df['fecha_salida'].min()
-    end_time = df['fecha_llegada'].max()
-    return generate_plot(df, additional_text, start_time, end_time, figsize=(17, 11))  # Tabloide horizontal en pulgadas (17 x 11)
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         table_data = request.form['table_data']
         additional_text = request.form.get('additional_text')
         full_plot = request.form.get('full_plot', 'false') == 'true'
-        tabloid_plot = request.form.get('tabloid_plot', 'false') == 'true'
         try:
-            df = pd.read_json(StringIO(table_data))
+            df = pd.read_json(table_data)
             df.rename(columns={'STD': 'fecha_salida', 'STA': 'fecha_llegada'}, inplace=True)
         except ValueError as e:
             return jsonify({'error': f"JSON parsing error: {e}"}), 400
@@ -143,12 +132,6 @@ def index():
             output.write(pdf_buffer.getbuffer())
             output.seek(0)
             return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt_full.pdf', mimetype='application/pdf')
-        elif tabloid_plot:
-            pdf_buffer = generate_tabloid_plot(df, additional_text)
-            output = io.BytesIO()
-            output.write(pdf_buffer.getbuffer())
-            output.seek(0)
-            return send_file(output, as_attachment=True, download_name='programacion_vuelos_qt_tabloid.pdf', mimetype='application/pdf')
         else:
             pdf_buffers, error = process_and_plot(df, additional_text)
             if error:
