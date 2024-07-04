@@ -33,10 +33,20 @@ def process_and_plot(df, additional_text):
             rect_height = 0.2
             ax.broken_barh([(start, duration)], (i - rect_height/2, rect_height), facecolors='red')
             flight_text = vuelo['Flight']
+            trip_text = vuelo['Trip']
+            notas_text = vuelo['Notas']
+            
             if text_fits(ax, flight_text, start, duration):
                 ax.text(start + duration / 2, i, flight_text, ha='center', va='center', color='black', fontsize=8)
             else:
                 ax.text(start + duration / 2, i - rect_height, flight_text, ha='center', va='top', color='black', fontsize=8)
+            
+            # Trip text above the bar
+            ax.text(start + duration / 2, i + 0.2, trip_text, ha='center', va='bottom', color='blue', fontsize=8)
+            
+            # Notas text below the bar
+            ax.text(start + duration / 2, i - 0.2, notas_text, ha='center', va='top', color='green', fontsize=8)
+
             origin_text = vuelo['From']
             if text_fits(ax, origin_text, start, duration):
                 ax.text(start, i + 0.2, origin_text, ha='left', va='center', color='black', fontsize=8)
