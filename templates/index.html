@@ -3,21 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Programación de Vuelos QT & Pilotos</title>
+    <title>Programación de Vuelos QT</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.css">
 </head>
 <body>
     <h1>Programación de Vuelos QT</h1>
-    <form id="dataForm" action="/" method="post">
+    <form id="dataForm" action="/" method="post" target="_blank">
         <label for="table">Ingrese los datos en la tabla:</label><br>
         <div id="table" class="handsontable"></div><br><br>
         <input type="hidden" id="table_data" name="table_data">
         <label for="additional_text">Texto adicional para el título:</label>
         <input type="text" id="additional_text" name="additional_text" placeholder="Ingrese texto adicional para el título"><br><br>
         <button type="submit">Procesar tabla y descargar PDF</button>
+        <button type="button" id="fullPlotButton">Generar PDF de gran tamaño</button>
+        <input type="hidden" id="full_plot" name="full_plot" value="false">
     </form>
     <script src="https://cdn.jsdelivr.net/npm/handsontable/dist/handsontable.full.min.js"></script>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        document.getElementById('fullPlotButton').addEventListener('click', function() {
+            document.getElementById('full_plot').value = 'true';
+            document.getElementById('dataForm').submit();
+            document.getElementById('full_plot').value = 'false';
+        });
+    </script>
 </body>
 </html>
