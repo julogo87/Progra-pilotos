@@ -86,6 +86,8 @@ def process_and_plot(df, additional_text):
     try:
         if 'STD' not in df.columns or 'STA' not in df.columns:
             raise KeyError("Missing column in input data: 'STD' or 'STA'")
+        df['STD'] = df['STD'].astype(str)
+        df['STA'] = df['STA'].astype(str)
         df['fecha_salida'] = parse_dates(df['STD'])
         df['fecha_llegada'] = parse_dates(df['STA'])
     except KeyError as e:
