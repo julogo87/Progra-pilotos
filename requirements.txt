@@ -6,3 +6,4 @@ matplotlib
 IPython
 ipywidgets
 ipywidgets
+PyPDF2
