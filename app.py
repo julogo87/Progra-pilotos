@@ -21,6 +21,13 @@ def text_fits(ax, text, start, duration):
     text_length_approx = len(text) * 0.02
     return duration.total_seconds() / 3600 >= text_length_approx
 
+def draw_text(ax, text, x, y, duration, align='center', **kwargs):
+    if text_fits(ax, text, x, duration):
+        ax.text(x + duration / 2, y, text, ha=align, va='center', **kwargs)
+    else:
+        truncated_text = text[:int(duration.total_seconds() / 3600 * 50)] + '...'
+        ax.text(x + duration / 2, y, truncated_text, ha=align, va='center', **kwargs)
+
 def generate_plot(df, additional_text, start_time, end_time):
     order = ['N330QT', 'N331QT', 'N332QT', 'N334QT', 'N335QT', 'N336QT', 'N337QT']
     df['aeronave'] = pd.Categorical(df['Reg.'], categories=order, ordered=True)
@@ -34,35 +41,17 @@ def generate_plot(df, additional_text, start_time, end_time):
             duration = vuelo['fecha_llegada'] - vuelo['fecha_salida']
             rect_height = 0.2
             ax.broken_barh([(start, duration)], (i - rect_height/2, rect_height), facecolors='#ADD8E6')  # Azul claro
-            flight_text = vuelo['Flight']
-            trip_text = vuelo['Trip']
-            notas_text = vuelo['Notas']
-            tripadi_text = vuelo['Tripadi']
             
-            if text_fits(ax, flight_text, start, duration):
-                ax.text(start + duration / 2, i, flight_text, ha='center', va='center', color='black', fontsize=8)
-            else:
-                ax.text(start + duration / 2, i - rect_height, flight_text, ha='center', va='top', color='black', fontsize=8)
-            
-            # Trip text above the bar, slightly higher
-            ax.text(start + duration / 2, i + 0.35, trip_text, ha='center', va='bottom', color='blue', fontsize=8)
-            
-            # Notas text below the bar
-            ax.text(start + duration / 2, i - 0.25, notas_text, ha='center', va='top', color='green', fontsize=8)
-            
-            # Tripadi text below the Notas
-            ax.text(start + duration / 2, i - 0.45, tripadi_text, ha='center', va='top', color='purple', fontsize=8)
+            draw_text(ax, vuelo['Flight'], start, i, duration, color='black', fontsize=8)
+            draw_text(ax, vuelo['Trip'], start, i + 0.35, duration, color='blue', fontsize=8)
+            draw_text(ax, vuelo['Notas'], start, i - 0.25, duration, color='green', fontsize=8)
+            draw_text(ax, vuelo['Tripadi'], start, i - 0.45, duration, color='purple', fontsize=8)
 
-            origin_text = vuelo['From']
-            if text_fits(ax, origin_text, start, duration):
-                ax.text(start, i + 0.2, origin_text, ha='left', va='center', color='black', fontsize=8)
-            else:
-                ax.text(start, i - rect_height, origin_text, ha='left', va='top', color='black', fontsize=8)
-            destination_text = vuelo['To']
-            if text_fits(ax, destination_text, start, duration):
-                ax.text(start + duration, i + 0.2, destination_text, ha='right', va='center', color='black', fontsize=8)
-            else:
-                ax.text(start + duration, i - rect_height, destination_text, ha='right', va='top', color='black', fontsize=8)
+            if text_fits(ax, vuelo['From'], start, duration):
+                ax.text(start, i + 0.2, vuelo['From'], ha='left', va='center', color='black', fontsize=8)
+            if text_fits(ax, vuelo['To'], start, duration):
+                ax.text(start + duration, i + 0.2, vuelo['To'], ha='right', va='center', color='black', fontsize=8)
+            
             ax.text(start, i - 0.2, vuelo['fecha_salida'].strftime('%H:%M'), ha='left', va='center', color='black', fontsize=6)
             ax.text(start + duration, i - 0.2, vuelo['fecha_llegada'].strftime('%H:%M'), ha='right', va='center', color='black', fontsize=6)
 
@@ -142,3 +131,4 @@ def index():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
